@@ -1,42 +1,50 @@
-# SPLIT THIS CODE INTO MULTIPLE FUNCTIONS - IT'S A MESS 
 
 IsCograph := function(D)
-  local x, neighbors, origin, adj, verts, P, part, pivot, 
-        neighbours, refine, unused_parts, current_part, y, 
+  local x, neighbours, origin, adj, verts, P, part, pivot, 
+        refine, unused_parts, current_part, y, 
         N_y, refined_parts, zl, zr, adj_zl, adj_zr, found, v;
+  
   # check if D is a digraph
+
   if not IsSymmetricDigraph(D) then;
     Error("IsCograph: argument must be a symmetric digraph");
   fi;
 
+# pick a vertex of G as the origin (choose first one)
+# if a universal or isolated vertex, recurse on all other vertices without it (i.e. remove it)
+  
   verts := DigraphVertices(D);
   P := [verts];
 
-# pick a vertex of G as the origin (choose first one)
+# a single vertex is a cograph
+  if Length(verts) = 1 then
+    return true;
+  fi;
+
+  if Length(verts) = 0 then
+    return false;
+  fi;
+
   origin := verts[1];
-# if a universal or isolated vertex, recurse on all other vertices without it (i.e. remove it)
   adj := OutNeighboursOfVertex(D, origin);
   if Length(adj) = 0 or Length(adj) = Length(verts) - 1 then
     return IsCograph(InducedSubdigraph(D, Filtered(verts, v -> v <> origin)));
   fi;
 
 # while there are non-singletons
-
-#ISSUES - CHECK THE MATHS IS CORRECT ON THIS
-  while not ForAll(P, part -> Length(part) = 1) do
-
 # if a part of the partition is not a singleton part, then:
 # find a non-singleton part
 # MAKE A PARTITION P
 
-    part := P[]
+  while not ForAll(P, part -> Length(part) = 1) do
+    part := P[1];
       if Length(part) > 1 then
         # pick an arbitrary vertex from the part as pivot
           pivot := part[1];
-          neighbors := OutNeighboursOfVertex(D, pivot);
+          neighbours := OutNeighboursOfVertex(D, pivot);
           # split the part into N'\int part, origin, N\int part - set as unused parts
-          refine := [[Intersection(neighbours, part)], [pivot], [Intersection(part, not neighbors)]];
-          unused_parts := [[Intersection(neighbors, part)], [Intersection(part, not neighbors)]];
+          refine := [Intersection(neighbours, part), [pivot], Intersection(part, Difference(verts, neighbours))];
+          unused_parts := [Intersection(neighbours, part), Intersection(part, Difference(verts, neighbours)), Difference(P, [part])];
     
 # while there exist unused parts
 # pick an arbitrary unused part and a vertex of the part
@@ -46,10 +54,20 @@ IsCograph := function(D)
         while Length(unused_parts) > 0 do
           current_part := unused_parts[1];
           y := current_part[1];
-          N_y := OutNeighbours(D, y);
-          refined_parts := [[Intersection(N_y, current_part)], [y], [Difference(current_part, N_y)]];
+          N_y := OutNeighboursOfVertex(D,y);
+          refined_parts := [Intersection(N_y, current_part), [y], Difference(current_part, N_y)];
           Remove(unused_parts, 1);
-          Add(unused_parts, refined_parts);
+
+          for p in refined_parts do
+            Add(unused_parts, p);
+          od;
+
+          for u in unused_parts do
+            if u = [] then
+              Remove(unused_parts, Position(unused_parts, u));
+            fi;
+          od;
+
         od;
       fi;
   od;
@@ -66,11 +84,11 @@ IsCograph := function(D)
   od;
 
   if zl = fail or zr = fail then
-    break;
+    return false;
   fi;
 
-  adj_zl := OutNeighborsOfVertex(D, zl);
-  adj_zr := OutNeighborsOfVertex(D, zr);
+  adj_zl := OutNeighboursOfVertex(D, zl);
+  adj_zr := OutNeighboursOfVertex(D, zr);
 
   found := false;
   for v in verts do
@@ -91,7 +109,7 @@ IsCograph := function(D)
   else
     origin := zl;
   fi;
-od;
+
 return true;
 
 end;
