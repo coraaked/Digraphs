@@ -2,7 +2,8 @@
 IsCograph := function(D)
   local x, neighbours, origin, adj, verts, P, part, pivot, 
         refine, unused_parts, current_part, y, 
-        N_y, refined_parts, zl, zr, adj_zl, adj_zr, found, v;
+        N_y, refined_parts, zl, zr, adj_zl, adj_zr, found,
+        p,u,v;
   
   # check if D is a digraph
 
@@ -45,7 +46,7 @@ IsCograph := function(D)
           # split the part into N'\int part, origin, N\int part - set as unused parts
           refine := [Intersection(neighbours, part), [pivot], Intersection(part, Difference(verts, neighbours))];
           unused_parts := [Intersection(neighbours, part), Intersection(part, Difference(verts, neighbours)), Difference(P, [part])];
-    
+          used_parts := [];
 # while there exist unused parts
 # pick an arbitrary unused part and a vertex of the part
 # set y as the pivot
@@ -56,21 +57,28 @@ IsCograph := function(D)
           y := current_part[1];
           N_y := OutNeighboursOfVertex(D,y);
           refined_parts := [Intersection(N_y, current_part), [y], Difference(current_part, N_y)];
+          
+          Add(used_parts, current_part);
           Remove(unused_parts, 1);
 
           for p in refined_parts do
-            Add(unused_parts, p);
-          od;
-
-          for u in unused_parts do
-            if u = [] then
-              Remove(unused_parts, Position(unused_parts, u));
+            if p not in used_parts then
+              Add(unused_parts, p);
             fi;
           od;
 
+          unused_parts_refined := [];
+          for u in unused_parts do
+            if u <> [] and u <> [y] then
+              Add(unused_parts_refined, u);
+            fi;
+          od;
+
+          unused_parts := unused_parts_refined;
         od;
       fi;
   od;
+
   #let zl and zr be the pivots of the nearest non-singleton parts to Origin respectievly on the left and right
   for part in P do
     if Length(part) > 1 then
