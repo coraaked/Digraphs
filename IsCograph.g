@@ -1,9 +1,9 @@
 IsCograph := function(D)
   local verts, P, origin, adj, part, neighbours, n_x,
         used_parts, unused_parts, unused_parts_refined,
-        k, y, N_y, M, p, m, ma, x, l,
+        k, y, N_y, M, p, m, ma, x, l,j,
         zl, zr, prevorigin, new_P, t, current_part, s, zrpart, pivot,
-        upd_part, zlpart, upd_m, pivotset;
+        upd_part, zlpart, upd_m, pivotset, sigma, succz, precz, z, N_z, N_precz, N_succz, pos, options, list, subpart;
   
     if not IsSymmetricDigraph(D) then;
     Error("IsCograph: argument must be a symmetric digraph");
@@ -62,7 +62,20 @@ IsCograph := function(D)
         fi;
 
         while Length(Filtered(unused_parts, u -> u <> [])) > 0 do
-            pivot := pivot + 1;
+            options := Filtered(unused_parts, part -> Length(part) > 0);
+            list := [];
+
+            for j in options do
+                Add(list, Minimum(j));
+            od;
+
+            subpart := unused_parts[Position(list, Minimum(list))];
+            
+            if Filtered(subpart, u -> u in used_parts) = [] then
+                pivot := Minimum(subpart);
+            else
+                pivot := subpart[part -> p in used_parts][1];
+            fi;
 
             M := [];
 
@@ -150,13 +163,10 @@ IsCograph := function(D)
             fi;
         fi;
 
-        P := Filtered(P,  i -> i <> [prevorigin]);
-    
+        #P := Filtered(P,  i -> i <> [prevorigin]);
+
     od;
     
-    return P;
-end;
-
   # Algorithm 5: Recognition Test
   # input: a permutation of the vertices
   # add vertices 0 and n+1
@@ -172,15 +182,26 @@ end;
   # choose z to be the first vertex
   z := sigma[2];
   # succ(z) = vertex after z
-  succz := sigma[Position(sigma, z) + 1];
-  precz := sigma[Position(sigma, z) - 1];
   # prec(z) = vertex before z
   # while z <> xn+1
-  while z <> sigma[Length(verts) + 1] do
+  while z <> Length(verts) + 1 do
+    
+    succz := sigma[Position(sigma, z) + 1];
+    precz := sigma[Position(sigma, z) - 1];
+
   # if z and prec(z) are twins in The graph with permutation vetrex set
-    N_z := OutNeighboursOfVertex(D, z);
-    N_precz := OutNeighboursOfVertex(D, precz);
-    N_succz := OutNeighboursOfVertex(D, succz);
+    N_z := Intersection(sigma, OutNeighboursOfVertex(D, z));
+    if precz <> 0 then
+      N_precz := Intersection(sigma, OutNeighboursOfVertex(D, precz));
+    else
+      N_precz := [0];
+    fi;
+
+    if succz <> Length(verts) + 1 then
+      N_succz := Intersection(sigma, OutNeighboursOfVertex(D, succz));
+    else
+      N_succz := [0];
+    fi;
 
 # remove prec(z) from sigma
  # else, if z and succ(z) are twins in G(sigma) then
@@ -188,14 +209,16 @@ end;
   #else, z is succ(z)
     if N_z = N_precz or Union(N_z, [z]) = Union(N_precz, [precz]) then
       # relabel z as prec(z) and remove succ(z) from sigma
-      Remove(sigma, Position(sigma, succz));
-  
+      Remove(sigma, Position(sigma, precz));
+
     elif N_z = N_succz or Union(N_z, [z]) = Union(N_succz, [succz]) then
       z := succz;
       Remove(sigma, Position(sigma, precz));
+      
     else
       z := succz;
     fi;
+
   od;
 
  # if size(sigma with xo and xn+1 removed) = 1, then G is a cograph
