@@ -3,7 +3,7 @@ IsCograph := function(D)
         used_parts, unused_parts, unused_parts_refined,
         k, y, N_y, M, p, m, ma, x, l,j,
         zl, zr, prevorigin, new_P, t, current_part, s, zrpart, pivot,
-        upd_part, zlpart, upd_m, pivotset, sigma, succz, precz, z, N_z, N_precz, N_succz, pos, options, list, subpart;
+        upd_part, zlpart, upd_m, pivotset, succz, precz, N_z, N_precz, N_succz, sigma, z, pos, options, list, subpart;
   
     if not IsSymmetricDigraph(D) then;
     Error("IsCograph: argument must be a symmetric digraph");
@@ -13,12 +13,9 @@ IsCograph := function(D)
     verts := DigraphVertices(D);
     P := [verts];
 
-    if Length(verts) = 1 then
+  # a graph that reduces to less than 4 vertices cannot contain P4, so must be a cograph
+    if Length(verts) < 4 then
         return true;
-    fi;
-
-    if Length(verts) = 0 then
-        return false;
     fi;
 
 # Choose vertex 1 as origin
@@ -214,7 +211,7 @@ IsCograph := function(D)
     elif N_z = N_succz or Union(N_z, [z]) = Union(N_succz, [succz]) then
       z := succz;
       Remove(sigma, Position(sigma, precz));
-      
+
     else
       z := succz;
     fi;
