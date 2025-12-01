@@ -1,9 +1,13 @@
+# Function that identifies a cograph from a symmetric digraph
+# Created from the algorithm described in the paper "A Simple Linear Time Recognition Algorithm for Cographs"
+# Habib, M & Paul, C & Viennot (2005). A Simple Linear Time Recognition Algorithm for Cographs. Discrete Applied Mathematics. 145(2). 183-197. https://doi.org/10.1016/j.dam.2004.01.011.
+
 IsCograph := function(D)
   local verts, P, origin, adj, part, neighbours, n_x,
         used_parts, unused_parts, unused_parts_refined,
         k, y, N_y, M, p, m, ma, x, l,j,
         zl, zr, prevorigin, new_P, t, current_part, s, zrpart, pivot,
-        upd_part, zlpart, upd_m, pivotset, succz, precz, N_z, N_precz, N_succz, sigma, z, pos, options, list, subpart;
+        upd_part, zlpart, upd_m, pivotset, sigma, succz, precz, z, N_z, N_precz, N_succz, pos, options, list, subpart;
   
     if not IsSymmetricDigraph(D) then;
     Error("IsCograph: argument must be a symmetric digraph");
@@ -13,9 +17,12 @@ IsCograph := function(D)
     verts := DigraphVertices(D);
     P := [verts];
 
-  # a graph that reduces to less than 4 vertices cannot contain P4, so must be a cograph
-    if Length(verts) < 4 then
+    if Length(verts) = 1 then
         return true;
+    fi;
+
+    if Length(verts) = 0 then
+        return false;
     fi;
 
 # Choose vertex 1 as origin
@@ -89,8 +96,6 @@ IsCograph := function(D)
                 fi;
             od;
     
-# works up until here!
-
             if M <> [] then
                 for m in M do
                     ma := Filtered(m, p -> p in pivotset);
@@ -99,7 +104,7 @@ IsCograph := function(D)
                     for t in Filtered(upd_m, x -> x <> []) do
                         Add(new_P, t, k);
                     od;
-# looking good up to here!
+
                     if m in unused_parts then
                         pos := ShallowCopy(Position(unused_parts, m));
                         Remove(unused_parts, pos);
@@ -186,7 +191,7 @@ IsCograph := function(D)
     succz := sigma[Position(sigma, z) + 1];
     precz := sigma[Position(sigma, z) - 1];
 
-  # if z and prec(z) are twins in The graph with permutation vetrex set
+  # if z and prec(z) are twins in The graph with permutation vertex set
     N_z := Intersection(sigma, OutNeighboursOfVertex(D, z));
     if precz <> 0 then
       N_precz := Intersection(sigma, OutNeighboursOfVertex(D, precz));
@@ -211,7 +216,7 @@ IsCograph := function(D)
     elif N_z = N_succz or Union(N_z, [z]) = Union(N_succz, [succz]) then
       z := succz;
       Remove(sigma, Position(sigma, precz));
-
+      
     else
       z := succz;
     fi;
