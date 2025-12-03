@@ -5,9 +5,9 @@
 IsCograph := function(D)
   local verts, P, origin, adj, part, neighbours, n_x,
         used_parts, unused_parts, unused_parts_refined,
-        k, y, N_y, M, p, m, ma, x, l,j,n,v,
-        zl, zr, prevorigin, new_P, t, current_part, s, zrpart, pivot,
-        upd_part, zlpart, upd_m, pivotset, sigma, succz, precz, z, N_z, N_precz, N_succz, pos, options, list, subpart;
+        k, y, N_y, M, p, m, ma, j,n,v,
+        zl, zr, prevorigin, new_P, t, current_part, zrpart, pivot,
+        upd_part, zlpart, upd_m, pivotset, sigma, succz, precz, z, N_z, N_precz, N_succz, options, list, subpart;
 
     # input must be symmetric
     if not IsSymmetricDigraph(D) then;
@@ -28,8 +28,7 @@ IsCograph := function(D)
         return IsCograph(InducedSubdigraph(D, Filtered(verts, v -> v <> origin)));
     fi;
 
-    pivot := ShallowCopy(origin);
-
+    # Algorithm 3: Partition Refinement
     while ForAll(P, part -> Length(part) <= 1) = false do
         k := PositionProperty(P, part -> origin in part);
         if Length(P[k]) > 1 then
@@ -60,9 +59,9 @@ IsCograph := function(D)
                 pivot := subpart[part -> p in used_parts][1];
             fi;
 
+            # Procedure 4
             M := [];
-            s := PositionProperty(new_P, part -> pivot in part);
-            current_part := ShallowCopy(new_P[s]);
+            current_part := ShallowCopy(new_P[PositionProperty(new_P, part -> pivot in part)]);
             pivotset := OutNeighboursOfVertex(D, pivot); 
 
             for p in Difference(new_P, [current_part]) do
@@ -81,8 +80,7 @@ IsCograph := function(D)
                         Add(new_P, t, k);
                     od;
                     if m in unused_parts then
-                        pos := ShallowCopy(Position(unused_parts, m));
-                        Remove(unused_parts, pos);
+                        Remove(unused_parts, Position(unused_parts, m));
                         if not ma in unused_parts and ma <> [] then
                             Add(unused_parts, ma);
                         fi;
@@ -90,19 +88,18 @@ IsCograph := function(D)
                             Add(unused_parts, Difference(m, ma));
                         fi;
                     else
-                        x := Minimum(m);
-                        if x in upd_m[1] then
+                        if Minimum(m) in upd_m[1] then
                             Add(unused_parts, upd_m[2]);
                         else
                             Add(unused_parts, upd_m[1]);
                         fi;
                     fi;
                     Add(used_parts, m);
+                    Add(used_parts, pivot);
                 od;
             fi;
             if current_part in unused_parts then
-                l := ShallowCopy(Position(unused_parts, current_part));
-                Remove(unused_parts, l);
+                Remove(unused_parts, Position(unused_parts, current_part));
             fi;
             Add(used_parts, current_part); 
         od;
@@ -135,7 +132,7 @@ IsCograph := function(D)
     od;
   
   # Algorithm 5: Recognition Test
- 
+
   sigma := [0];
   for p in P do
     for v in p do
@@ -166,7 +163,7 @@ IsCograph := function(D)
       Remove(sigma, Position(sigma, precz));
     elif N_z = N_succz or Union(N_z, [z]) = Union(N_succz, [succz]) then
       z := succz;
-      Remove(sigma, Position(sigma, precz));
+      Remove(sigma, Position(sigma, precz) + 1);
     else
       z := succz;
     fi;
